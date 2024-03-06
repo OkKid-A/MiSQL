@@ -39,6 +39,8 @@ nonterminal Archivo            arch;
 nonterminal String             name, path, proy_top, car_top;
 nonterminal Location           direc;
 
+/* Gramatica */
+
 start with proyecto;
 
 proyecto ::= proy_top:pt modulo proy_bot                  {: proyectoLector.setNombre(pt); RESULT = proyectoLector; :}

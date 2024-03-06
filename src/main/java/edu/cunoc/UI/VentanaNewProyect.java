@@ -25,10 +25,9 @@ public class VentanaNewProyect extends JFrame{
     public VentanaNewProyect(ProyectoLector proyectoLector, VentanaPrincipal ventanaPrincipal) {
         setButtons();
         fixComponents();
-        this.proyectoLector = proyectoLector;
+        this.proyectoLector = new ProyectoLector();
         this.jframe = ventanaPrincipal.getArbolScrollPane();
         this.jTree = ventanaPrincipal.getArbol();
-        this.arbol = new Arbol(proyectoLector,ventanaPrincipal);
         this.ventanaPrincipal = ventanaPrincipal;
     }
 
@@ -42,6 +41,7 @@ public class VentanaNewProyect extends JFrame{
                     EscritorProyecto escritorProyecto = new EscritorProyecto(proyectoLector);
                     ventanaPrincipal.setProyectoLector(proyectoLector);
                     try {
+                        arbol = new Arbol(proyectoLector, ventanaPrincipal);
                         JTree tree = arbol.dibujarArbol();
                         arbol.addActionListener(tree);
                         escritorProyecto.crearProyecto();

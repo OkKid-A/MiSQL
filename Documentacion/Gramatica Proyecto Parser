@@ -1,0 +1,28 @@
+Simbolo inicial = proyecto
+
+proyecto ::= proy_top modulo proy_bot             
+
+modulo ::= modulo direc                                
+           |e 
+
+direc ::= folder
+        | arch
+
+folder ::= car_top mod car_bot
+
+mod ::= mod direc
+           | e                                      
+
+arch ::= MENOSQUE ARCHIVO name path DIAGONAL MAYORQUE
+
+car_top ::= MENOSQUE CARPETA name MAYORQUE              
+
+proy_top ::= MENOSQUE PROYECTO name MAYORQUE      
+
+name ::= NOMBRE IGUAL COMILLA ID_ARCHIVO COMILLA  
+
+path ::= UBICACION IGUAL COMILLA DIRECCION COMILLA  
+
+car_bot ::= MENOSQUE DIAGONAL CARPETA MAYORQUE
+
+proy_bot ::= MENOSQUE DIAGONAL PROYECTO MAYORQUE

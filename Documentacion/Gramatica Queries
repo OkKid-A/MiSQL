@@ -1,0 +1,74 @@
+  Expresion inicial: script
+
+  script ::= operaciones                         
+
+  operaciones ::= operacion operaciones      
+              | e
+
+  operacion ::= query PC                        
+
+  query ::= select                                
+          | insert                                
+          | update                                
+          | delete                        
+
+  select ::= SELECCIONAR sel_columnas EN path filtrar   
+         
+
+  sel_columnas ::= lis_columnas               
+                | ASTERISCO       
+
+  insert ::= INSERTAR EN path insert_col VALORES PAR_OP lis_valores PAR_CLO     
+
+  lis_valores ::=  valor COMA lis_valores      
+                |  valor                         
+
+  insert_col ::= PAR_OP lis_columnas PAR_CLO      
+            |     
+
+  update ::= ACTUALIZAR EN path ASIGNAR lis_asign filtrar_pos   
+
+  lis_asign ::= condicion COMA lis_asign       
+            | condicion        
+
+  delete ::= ELIMINAR EN path filtrar_pos
+
+  lis_columnas ::= ID_ARCHIVO columna
+
+  columna ::= COMA ID_ARCHIVO columna
+          | e                                       
+
+  filtrar ::= FILTRAR condiciones               
+
+  filtrar_pos ::= filtrar
+                |   e                                
+
+  condiciones ::= condicion:c cond_op_log:cop       
+
+  cond_op_log ::= AND condicion con_and        
+                | OR condicion con_or      
+                | e                                 
+
+  con_and ::= AND condicion:c con_and:ca            
+
+  con_or ::= OR condicion con_or               
+
+  condicion ::= ID_ARCHIVO op_rel valor
+
+  path ::= ID_ARCHIVO path_file
+
+  path_file ::= PUNTO ID_ARCHIVO path_file    
+            | e                                     
+
+   op_rel::= DISTINTO                               
+           | MENORIGUAL                            
+           | MAYORIGUAL                            
+           | MENORQUE                              
+           | MAYORQUE                               
+           | IGUAL                            
+
+  valor ::= COMILLA ID COMILLA                           
+          | OTRO
+          | DECIMAL
+          | ENTERO
+          | e          

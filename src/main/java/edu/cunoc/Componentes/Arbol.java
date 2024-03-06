@@ -4,6 +4,7 @@ import edu.cunoc.Archivador.Archivo;
 import edu.cunoc.Archivador.Carpeta;
 import edu.cunoc.Proyecto.EscritorProyecto;
 import edu.cunoc.Proyecto.ProyectoLector;
+import edu.cunoc.UI.PanelCSV;
 import edu.cunoc.UI.VentanaNewFile;
 import edu.cunoc.UI.VentanaNewFolder;
 import edu.cunoc.UI.VentanaPrincipal;
@@ -16,6 +17,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.io.IOException;
 import java.util.ArrayList;
 
 public class Arbol extends JTree {
@@ -64,38 +66,33 @@ public class Arbol extends JTree {
         jTree.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
-                if (SwingUtilities.isRightMouseButton(e)){
-                    int selected = jTree.getRowForLocation(e.getX(),e.getY());
-                    TreePath rutaNodo = jTree.getPathForLocation(e.getX(),e.getY());
+                if (e.getClickCount()==1) {
+                    if (SwingUtilities.isRightMouseButton(e)) {
+                        int selected = jTree.getRowForLocation(e.getX(), e.getY());
+                        TreePath rutaNodo = jTree.getPathForLocation(e.getX(), e.getY());
+                        if (selected != -1) {
+                            if (rutaNodo != null) {
+                                JPopupMenu popupMenu = setPopUpNuevo(rutaNodo);
+                                popupMenu.show(jTree, e.getX(), e.getY());
+                            }
+                        }
+                    }
+                } else if (e.getClickCount() == 2) {
+                    int selected = jTree.getRowForLocation(e.getX(), e.getY());
+                    TreePath rutaNodo = jTree.getPathForLocation(e.getX(), e.getY());
                     if (selected!=-1) {
-                        if (rutaNodo != null){
+                        if (rutaNodo!=null) {
                             DefaultMutableTreeNode nodoSeleccionado = (DefaultMutableTreeNode) rutaNodo.getLastPathComponent();
-                            if (e.getClickCount() == 1) {
-                                    JPopupMenu popupMenu = new JPopupMenu();
-                                    JMenuItem archivo = new JMenuItem("Nuevo Archivo");
-                                    archivo.addActionListener(new ActionListener() {
-                                        @Override
-                                        public void actionPerformed(ActionEvent e) {
-                                            TreeNode[] treePath =
-                                                    ((DefaultMutableTreeNode) nodoSeleccionado).getPath();
-                                            VentanaNewFile venFile = new VentanaNewFile(new EscritorProyecto(proyectoLector), treePath, ventanaPrincipal);
-                                        }
-                                    });
-                                    JMenuItem carpeta = new JMenuItem("Nueva Carpeta");
-                                    carpeta.addActionListener(new ActionListener() {
-                                        @Override
-                                        public void actionPerformed(ActionEvent e) {
-                                            TreeNode[] treePath =
-                                                    ((DefaultMutableTreeNode) nodoSeleccionado).getPath();
-                                            VentanaNewFolder venFolder = new VentanaNewFolder(new EscritorProyecto(proyectoLector), treePath, ventanaPrincipal);
-                                        }
-                                    });
-                                    popupMenu.add(archivo);
-                                    popupMenu.add(carpeta);
-                                    popupMenu.show(jTree, e.getX(), e.getY());
-                            } else if (e.getClickCount() == 2){
-                                if (nodoSeleccionado.getUserObject()instanceof Archivo){
-
+                            if (nodoSeleccionado.getUserObject() instanceof Archivo) {
+                                Archivo archivo = (Archivo) nodoSeleccionado.getUserObject();
+                                try {
+                                    ventanaPrincipal.getArchivosTabbed().addTab(archivo.getName(),
+                                            new PanelCSV(archivo,ventanaPrincipal).getCsvPanel());
+                                    ventanaPrincipal.getArchivosTabbed().setTabPlacement(JTabbedPane.LEFT);
+                                    ventanaPrincipal.revalidate();
+                                    ventanaPrincipal.pack();
+                                } catch (IOException ex) {
+                                    ex.printStackTrace();
                                 }
                             }
                         }
@@ -103,5 +100,31 @@ public class Arbol extends JTree {
                 }
             }
         });
+    }
+
+    private JPopupMenu setPopUpNuevo(TreePath rutaNodo) {
+        DefaultMutableTreeNode nodoSeleccionado = (DefaultMutableTreeNode) rutaNodo.getLastPathComponent();
+        JPopupMenu popupMenu = new JPopupMenu();
+        JMenuItem archivo = new JMenuItem("Nuevo Archivo");
+        archivo.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                TreeNode[] treePath =
+                        ((DefaultMutableTreeNode) nodoSeleccionado).getPath();
+                VentanaNewFile venFile = new VentanaNewFile(new EscritorProyecto(proyectoLector), treePath, ventanaPrincipal);
+            }
+        });
+        JMenuItem carpeta = new JMenuItem("Nueva Carpeta");
+        carpeta.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                TreeNode[] treePath =
+                        ((DefaultMutableTreeNode) nodoSeleccionado).getPath();
+                VentanaNewFolder venFolder = new VentanaNewFolder(new EscritorProyecto(proyectoLector), treePath, ventanaPrincipal);
+            }
+        });
+        popupMenu.add(archivo);
+        popupMenu.add(carpeta);
+        return popupMenu;
     }
 }

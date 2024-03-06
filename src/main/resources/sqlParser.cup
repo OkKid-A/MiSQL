@@ -1,0 +1,180 @@
+package edu.cunoc.Instructor;
+
+import edu.cunoc.Proyecto.ProyectoLector;
+import edu.cunoc.Query.*;
+import java_cup.runtime.*;
+import java_cup.runtime.XMLElement;
+
+import java.util.ArrayList;
+
+parser code {:
+    private ProyectoLector proyectoLector;
+
+    public SQLParser(SQLexer lex, ProyectoLector proyectoLector){
+                super(lex);
+                this.proyectoLector = proyectoLector;
+            }
+
+private InstructorSQL instructorSQL = new InstructorSQL(proyectoLector);
+
+public InstructorSQL getInstructorSQL(){
+    return instructorSQL;
+}
+
+public void syntax_error(Symbol cur_token) {
+            System.out.println("Simbolo con error:" + symbl_name_from_id(cur_token.sym));
+            System.out.println("Linea " + cur_token.left+" Columna " + cur_token.right);
+            String posibleLex = "";
+            if (cur_token.value != null){
+                System.out.println("Lexema: "+cur_token.value);
+                posibleLex = "Lexema: "+(String) cur_token.value;
+            }
+            instructorSQL.addError("Error sintactico al encontrar el simbolo:" + symbl_name_from_id(cur_token.sym)+"\nLinea " +
+                    cur_token.left+", Columna \n" + cur_token.right+posibleLex);
+            if (expected_token_ids().isEmpty()) {
+                System.out.println("ya no se esperaba ningun simbolo");
+            } else {
+            List<Integer> ids = this.expected_token_ids();
+                    LinkedList<String> list = new LinkedList();
+                    Iterator var3 = ids.iterator();
+
+                    while(var3.hasNext()) {
+                        Integer expected = (Integer)var3.next();
+                        list.add(this.symbl_name_from_id(expected));
+                    }
+                              instructorSQL.addError("Se esperaba uno de los tokens:" + list.toString());
+                                                            report_expected_token_ids();
+                                                        }
+        }
+
+:}
+
+/* Terminales */
+
+  terminal            DISTINTO, MENORIGUAL, MAYORIGUAL, MENORQUE, MAYORQUE, IGUAL, COMILLA, PC, COMA, PAR_OP, PAR_CLO,
+                      SELECCIONAR, INSERTAR, ELIMINAR, ACTUALIZAR, ASIGNAR, FILTRAR, EN, VALORES, AND, OR, ASTERISCO, PUNTO;
+  terminal String     ID, OTRO, ID_ARCHIVO;
+  terminal Float      DECIMAL;
+  terminal Integer    ENTERO;
+
+  /* No Terminales */
+
+  nonterminal InstructorSQL      script;
+  nonterminal Object              valor;
+  nonterminal String              op_rel;
+  nonterminal Condicion           condicion;
+  nonterminal Logico              cond_op_log, con_and, con_or, condiciones, filtrar, filtrar_pos;
+  nonterminal Delete              delete;
+  nonterminal Update              update;
+  nonterminal Insert              insert;
+  nonterminal Select              select;
+  nonterminal Instruccion         query, operacion;
+  nonterminal ArrayList<Condicion> lis_asign;
+  nonterminal ArrayList<Object>   lis_valores;
+  nonterminal ArrayList<Instruccion>   operaciones;
+  nonterminal ArrayList<String>   path, path_file, columna, lis_columnas, sel_columnas, insert_col;
+
+  /* Gramatica */
+
+  start with script;
+
+  script ::= operaciones:o                          {: instructorSQL.setQueries(o); RESULT = instructorSQL; :}
+            ;
+
+  operaciones ::= operacion:q operaciones:op        {: op.add(q); RESULT = op; :}
+              |                                     {: RESULT =  new ArrayList<Instruccion>(); :}
+              ;
+
+  operacion ::= query:q PC                          {: if(q.isValid(proyectoLector)){
+                                                       RESULT = q;}
+                                                       else{parser.report_error("Columna o Archivo no encontrado en linea: "+cur_token.right+" columna: "+cur_token.left,q);
+                                                       instructorSQL.addError("No se encontro la columna o archivo mencionado en linea: "+cur_token.right+" columna: "+cur_token.left);} :}
+              ;
+
+  query ::= select:s                                {: RESULT = s; :}
+          | insert:i                                {: RESULT = i; :}
+          | update:u                                {: RESULT = u; :}
+          | delete:d                                {: RESULT = d; :}
+          ;
+
+  select ::= SELECCIONAR sel_columnas:s EN path:p filtrar:f    {: RESULT = new Select(p,s,f); :}
+          ;
+
+  sel_columnas ::= lis_columnas:l                   {: RESULT = l; :}
+                | ASTERISCO                         {: RESULT = null; :}
+                ;
+
+  insert ::= INSERTAR EN path:p insert_col:s VALORES PAR_OP lis_valores:v PAR_CLO      {: RESULT = new Insert(p,s,v); :}
+          ;
+
+  lis_valores ::=  valor:v COMA lis_valores:lv      {: lv.add(v); RESULT = lv; :}
+                |  valor:v                          {: ArrayList<Object> lv = new ArrayList<Object>(); lv.add(v); RESULT = lv; :}
+                ;
+
+  insert_col ::= PAR_OP lis_columnas:l PAR_CLO      {: RESULT = l; :}
+            |                                       {: RESULT = null; :}
+            ;
+
+  update ::= ACTUALIZAR EN path:p ASIGNAR lis_asign:l filtrar_pos:f   {: RESULT = new Update(p,l,f); :}
+            ;
+
+  lis_asign ::= condicion:c COMA lis_asign:la       {: la.add(c); RESULT = la; :}
+            | condicion:c                           {: ArrayList<Condicion> la = new ArrayList<Condicion>(); la.add(c); RESULT = la; :}
+            ;
+
+  delete ::= ELIMINAR EN path:p filtrar_pos:f       {: RESULT = new Delete(p,f); :}
+            ;
+
+  lis_columnas ::= ID_ARCHIVO:i columna:c                   {: c.add(i); RESULT = c; :}
+                ;
+
+  columna ::= COMA ID_ARCHIVO:i columna:c                   {: c.add(i); RESULT = c; :}
+          |                                         {: RESULT = new ArrayList<String>(); :}
+          ;
+
+  filtrar ::= FILTRAR condiciones:c                 {: RESULT = c; :}
+            ;
+
+  filtrar_pos ::= filtrar:f                          {: RESULT = f; :}
+                |                                   {: RESULT = null; :}
+                ;
+
+  condiciones ::= condicion:c cond_op_log:cop       {: cop.add(c); RESULT = cop; :}
+                ;
+
+  cond_op_log ::= AND condicion:c con_and:ca        {: ca.add(c); ca.setAnd(true); RESULT = ca; :}
+                | OR condicion:c con_or:co          {: co.add(c); co.setAnd(false); RESULT = co; :}
+                |                                   {: RESULT = new Logico(); :}
+                ;
+
+  con_and ::= AND condicion:c con_and:ca            {: ca.add(c); RESULT = ca; :}
+           ;
+
+  con_or ::= OR condicion:c con_or:co               {: co.add(c); RESULT = co; :}
+           ;
+
+  condicion ::= ID_ARCHIVO:id op_rel:o valor:v              {: RESULT = new Condicion(id,o,v); :}
+             ;
+
+  path ::= ID_ARCHIVO:i path_file:p                 {: p.add(i); RESULT = p; :}
+            ;
+
+  path_file ::= PUNTO ID_ARCHIVO:i path_file:p      {: p.add(i); RESULT = p; :}
+            |                                       {:  RESULT = new ArrayList<String>(); :}
+            ;
+
+   op_rel::= DISTINTO                               {:  RESULT = "<>"; :}
+           | MENORIGUAL                             {:  RESULT = "<="; :}
+           | MAYORIGUAL                             {:  RESULT = ">="; :}
+           | MENORQUE                               {:  RESULT = "<"; :}
+           | MAYORQUE                               {:  RESULT = ">"; :}
+           | IGUAL                                  {:  RESULT = "="; :}
+           ;
+
+  valor ::= ID:i                            {: RESULT = i; :}
+          | OTRO:o                                          {: RESULT = o; :}
+          | DECIMAL:d                                       {: RESULT = d; :}
+          | ENTERO:e                                        {: RESULT = e; :}
+          |                                                 {: RESULT = null; :}
+          ;
+

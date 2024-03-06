@@ -1,0 +1,17 @@
+csv ::= filaHeader
+
+filaHeader ::= ID COMA filaHeader                    
+            | ID                                             
+
+
+fila ::= valor columna EOL fila                         
+        |e    
+
+columna ::= COMA valor columna                  
+        |e
+
+valor ::= ID                                     
+        | OTRO                                  
+        | DECIMAL                                   
+        | ENTERO:                               
+        | e

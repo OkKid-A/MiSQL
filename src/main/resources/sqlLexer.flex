@@ -4,7 +4,8 @@ import java_cup.runtime.*;
 
 %%
 
-%class sqlLexer
+%class SQLexer
+%public
 %cup
 %line
 %column
@@ -20,7 +21,7 @@ import java_cup.runtime.*;
     }
 
     private void error(String message) {
-        System.out.println("Error en linea line "+(yyline+1)+", columna "+(yycolumn+1)+" : "+message);
+        System.out.println("Error lexico en linea "+(yyline+1)+", columna "+(yycolumn+1)+" : "+message);
     }
 %}
 
@@ -28,15 +29,19 @@ import java_cup.runtime.*;
 EOL = \n|\r|\r\n
 
 Space = {EOL} | [\t\f]
-Comilla = \"
+SpaceMid = [ \t\f]
 
-Id = (@ | - | "+" | "*" | _ | # | [:letter:] | [:digit:] )+
+Entero = 0 | [1-9][0-9]*
+Decimal = {Entero}+ "." [1-9][0-9]*
+Id = (@ | - | "+" | "*" | _ | # | [:letter:] | {Entero} )+
+IdExt =   \"{Id}+ ({SpaceMid} {Id})*\"
+Otro = ({Entero}|{Decimal}|{Id}|{IdExt})+
 
 %%
 
+ "ELIMINAR"                  {return symbol(sym.ELIMINAR);}
  "SELECCIONAR"               {return symbol(sym.SELECCIONAR);}
  "INSERTAR"                  {return symbol(sym.INSERTAR);}
- "ELIMINAR"                  {return symbol(sym.ELIMINAR);}
  "ACTUALIZAR"                {return symbol(sym.ACTUALIZAR);}
  "ASIGNAR"                   {return symbol(sym.ASIGNAR);}
  "FILTRAR"                   {return symbol(sym.FILTRAR);}
@@ -44,10 +49,14 @@ Id = (@ | - | "+" | "*" | _ | # | [:letter:] | [:digit:] )+
  "VALORES"                   {return symbol(sym.VALORES);}
  "AND"                       {return symbol(sym.AND);}
  "OR"                        {return symbol(sym.OR);}
+       "*"                         {return symbol(sym.ASTERISCO);}
 
- {Id}                        {return symbol(sym.ID_ARCHIVO);}
- [:digit:]+                  {return symbol(sym.ENTERO);}
- [:digit:]+ "." [1-9][0-9]*  {return symbol(sym.ENTERO);}
+ {Entero}                    {return symbol(sym.ENTERO, new Integer(yytext()));}
+ {Decimal}                   {return symbol(sym.DECIMAL, new Float(yytext()));}
+ {Id}                        {return symbol(sym.ID_ARCHIVO, new String(yytext()));}
+ {IdExt}                     {return symbol(sym.ID, new String(yytext()));}
+ {Otro}                      {return symbol(sym.OTRO, new String(yytext()));}
+
 
  "<"">"                      {return symbol(sym.DISTINTO);}
  "<""="                      {return symbol(sym.MENORIGUAL);}
@@ -55,13 +64,13 @@ Id = (@ | - | "+" | "*" | _ | # | [:letter:] | [:digit:] )+
  "<"                         {return symbol(sym.MENORQUE);}
  ">"                         {return symbol(sym.MAYORQUE);}
  "="                         {return symbol(sym.IGUAL);}
- {Comilla}                   {return symbol(sym.COMILLA);}
+ \"                          {return symbol(sym.COMILLA);}
  \;                          {return symbol(sym.PC);}
  \,                          {return symbol(sym.COMA);}
  \(                          {return symbol(sym.PAR_OP);}
  \)                          {return symbol(sym.PAR_CLO);}
-
- {Space}             {}
+ \.                          {return symbol(sym.PUNTO);}
+ {Space}             {             }
  <<EOF>>             {return symbol(sym.EOF);}
 
  [^]                 {error("Simbolo invalido <"+yytext()+"> en linea "+(yyline+1)+" en columna "+ (yycolumn+1));}

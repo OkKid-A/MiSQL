@@ -1,0 +1,88 @@
+package edu.cunoc.LectorCSV;
+
+import java.util.Collections;
+
+import java.util.ArrayList;
+import java_cup.runtime.*;
+
+parser code {:
+     CSVParser(CSVLexer lex){
+                super(lex);
+            }
+
+private OrganizadorCSV organizadorCSV = new OrganizadorCSV();
+
+public OrganizadorCSV getorganizadorCSV(){
+    return organizadorCSV;
+}
+
+public void syntax_error(Symbol cur_token) {
+            System.out.println("Simbolo con error:" + symbl_name_from_id(cur_token.sym));
+            System.out.println("Linea " + cur_token.left);
+            System.out.println("Columna " + cur_token.right);
+            if (expected_token_ids().isEmpty()) {
+                System.out.println("ya no se esperaba ningun simbolo");
+            }
+        }
+
+:}
+
+/* Terminales */
+
+terminal            COMA, EOL;
+terminal String     ID, OTRO;
+terminal Float      DECIMAL;
+terminal Integer    ENTERO;
+
+/* No Terminales */
+
+nonterminal OrganizadorCSV      csv;
+nonterminal Object              valor;
+nonterminal ArrayList<Object>   columna;
+nonterminal ArrayList<String>   filaHeader;
+nonterminal ArrayList<Object[]>   fila;
+
+/* Gramatica */
+
+start with csv;
+
+csv ::= filaHeader:f EOL fila:fa                         {: Collections.reverse(f); organizadorCSV.setHeaders(f); Collections.reverse(fa); organizadorCSV.setFilas(fa);
+                                                                RESULT = organizadorCSV; :}
+        ;
+
+filaHeader ::= ID:i COMA filaHeader:f                           {: f.add(i); organizadorCSV.setHeaders(f); RESULT = f; :}
+            | ID:i                                              {: ArrayList<String> f = new ArrayList<String>(); f.add(i); organizadorCSV.setHeaders(f); RESULT = f; :}
+            ;
+
+
+fila ::= valor:v columna:c EOL fila:f                           {: c.add(v); if (c.size()==organizadorCSV.getNumColumnas()){
+                                                                  f.add(c.toArray(new Object[c.size()])); RESULT = f;}
+                                                                  else {parser.report_error("No se encontraron suficientes columnas en la fila:" +
+                                                                  f.size()+1,f); }:}
+        |                                                         {: RESULT =  new ArrayList<Object[]>(); :}
+        ;
+
+columna ::= COMA valor:v columna:c                    {: c.add(v); RESULT = c; :}
+        |                                             {: RESULT =  new ArrayList<Object>(); :}
+        ;
+
+valor ::= ID:i                                            {: RESULT = i; :}
+        | OTRO:o                                          {: RESULT = o; :}
+        | DECIMAL:d                                       {: RESULT = d; :}
+        | ENTERO:e                                        {: RESULT = e; :}
+        |                                                 {: RESULT = null; :}
+        ;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
